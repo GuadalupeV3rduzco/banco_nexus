@@ -15,7 +15,6 @@ body {
   padding: 24px;
 }
 
-/* ----- Encabezado ----- */
 .header {
   background: linear-gradient(135deg, #0a3d91 0%, #0a6cff 100%);
   color: white;
@@ -35,7 +34,6 @@ body {
   font-size: 14px;
 }
 
-/* ----- Pestañas ----- */
 .tabs {
   display: flex;
   gap: 8px;
@@ -64,7 +62,6 @@ body {
   box-shadow: 0 4px 12px rgba(10, 108, 255, 0.25);
 }
 
-/* ----- Tarjetas ----- */
 .card {
   background: white;
   border-radius: 12px;
@@ -86,7 +83,6 @@ body {
   color: #1a2540;
 }
 
-/* ----- Formulario ----- */
 .form-row {
   display: flex;
   gap: 10px;
@@ -131,7 +127,6 @@ button:disabled { background: #9bb5d6; cursor: not-allowed; }
   font-size: 14px;
 }
 
-/* ----- Info del cliente ----- */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -165,7 +160,6 @@ hr {
   margin-top: 4px;
 }
 
-/* ----- Tabla ----- */
 .tabla {
   width: 100%;
   border-collapse: collapse;
@@ -210,7 +204,63 @@ hr {
 .positivo { color: #1e8449; font-weight: 600; }
 .negativo { color: #c0392b; font-weight: 600; }
 
-/* ----- Pie ----- */
+input[type="number"] {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #d4dbe7;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+input[type="number"]:focus {
+  border-color: #0a6cff;
+  box-shadow: 0 0 0 3px rgba(10, 108, 255, 0.1);
+}
+
+.select-sucursal {
+  padding: 12px 14px;
+  border: 1px solid #d4dbe7;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-deposito {
+  flex: 1;
+  background: #1e8449;
+}
+.btn-deposito:hover:not(:disabled) { background: #166937; }
+
+.btn-retiro {
+  flex: 1;
+  background: #c0392b;
+}
+.btn-retiro:hover:not(:disabled) { background: #a02e22; }
+
+.exito {
+  color: #1e8449;
+  background: #e6f7ee;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.badge-sucursal {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e8eefb;
+  color: #0a3d91;
+}
+
 .footer {
   text-align: center;
   font-size: 13px;

@@ -4,14 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 
-// ---------- Configuración ----------
 const PORT = 3001;
 const MONGO_URI = 'mongodb://localhost:27017';
 const DB_NAME = 'banco_nexus';
 
 const app = express();
-app.use(cors());           
-app.use(express.json());   
+app.use(cors());
+app.use(express.json());
 
 let db;
 const client = new MongoClient(MONGO_URI);
@@ -49,17 +48,11 @@ app.get('/api/clientes', async (req, res) => {
 app.get('/api/cuenta/:cuenta', async (req, res) => {
   try {
     const numeroCuenta = req.params.cuenta;
-
-    // 1) Buscar la cuenta
     const cuenta = await db.collection('cuentas').findOne({ cuenta: numeroCuenta });
     if (!cuenta) {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
     }
-
-    // 2) Buscar el cliente dueño (relación cuenta.cliente -> cliente.curp)
     const cliente = await db.collection('clientes').findOne({ curp: cuenta.cliente });
-
-    // 3) Últimas transacciones (ordenadas por fecha desc)
     const movimientos = await db
       .collection('transacciones')
       .find({ cuenta: numeroCuenta })
@@ -80,7 +73,6 @@ app.get('/api/cuenta/:cuenta', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.get('/api/historial/:cuenta', async (req, res) => {
   try {
@@ -106,7 +98,10 @@ app.get('/api/historial/:cuenta', async (req, res) => {
 
     for (const t of txs) {
       saldo += t.tipo === 'deposito' ? t.monto : -t.monto;
-      historial.push({ fecha: t.fecha, saldo, descripcion: t.descripcion, tipo: t.tipo, monto: t.monto });
+      historial.push({
+        fecha: t.fecha, saldo, descripcion: t.descripcion,
+        tipo: t.tipo, monto: t.monto, sucursal: t.sucursal || 'N/A'
+      });
     }
 
     res.json(historial);
@@ -116,10 +111,107 @@ app.get('/api/historial/:cuenta', async (req, res) => {
 });
 
 
+app.post('/api/deposito', async (req, res) => {
+  try {
+    const { cuenta, monto, sucursal } = req.body;
+
+    const cantidad = Number(monto);
+    if (isNaN(cantidad) || cantidad <= 0) {
+      return res.status(400).json({ error: 'El monto debe ser un número mayor a 0' });
+    }
+
+    const cuentaDoc = await db.collection('cuentas').findOne({ cuenta: String(cuenta) });
+    if (!cuentaDoc) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+
+    const nuevaTx = {
+      cuenta: String(cuenta),
+      tipo: 'deposito',
+      monto: cantidad,
+      fecha: new Date(),
+      descripcion: `Depósito desde sucursal ${sucursal || 'N/A'}`,
+      sucursal: sucursal || 'N/A'
+    };
+    await db.collection('transacciones').insertOne(nuevaTx);
+
+    await db.collection('cuentas').updateOne(
+      { cuenta: String(cuenta) },
+      { $inc: { saldo: cantidad } }
+    );
+
+    const actualizada = await db.collection('cuentas').findOne({ cuenta: String(cuenta) });
+
+    res.json({
+      mensaje: 'Depósito exitoso',
+      cuenta: String(cuenta),
+      monto: cantidad,
+      sucursal: sucursal || 'N/A',
+      saldoNuevo: actualizada.saldo
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+app.post('/api/retiro', async (req, res) => {
+  try {
+    const { cuenta, monto, sucursal } = req.body;
+
+    const cantidad = Number(monto);
+    if (isNaN(cantidad) || cantidad <= 0) {
+      return res.status(400).json({ error: 'El monto debe ser un número mayor a 0' });
+    }
+
+    const cuentaDoc = await db.collection('cuentas').findOne({ cuenta: String(cuenta) });
+    if (!cuentaDoc) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+
+    if (cuentaDoc.saldo < cantidad) {
+      return res.status(400).json({
+        error: 'Fondos insuficientes',
+        saldoActual: cuentaDoc.saldo,
+        montoSolicitado: cantidad
+      });
+    }
+
+    const nuevaTx = {
+      cuenta: String(cuenta),
+      tipo: 'retiro',
+      monto: cantidad,
+      fecha: new Date(),
+      descripcion: `Retiro desde sucursal ${sucursal || 'N/A'}`,
+      sucursal: sucursal || 'N/A'
+    };
+    await db.collection('transacciones').insertOne(nuevaTx);
+
+    await db.collection('cuentas').updateOne(
+      { cuenta: String(cuenta) },
+      { $inc: { saldo: -cantidad } }
+    );
+
+    const actualizada = await db.collection('cuentas').findOne({ cuenta: String(cuenta) });
+
+    res.json({
+      mensaje: 'Retiro exitoso',
+      cuenta: String(cuenta),
+      monto: cantidad,
+      sucursal: sucursal || 'N/A',
+      saldoNuevo: actualizada.saldo
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 conectarMongo().then(() => {
   app.listen(PORT, () => {
     console.log(` API REST escuchando en http://localhost:${PORT}`);
-    console.log(`   Prueba: http://localhost:${PORT}/api/health`);
-    console.log(`   Prueba: http://localhost:${PORT}/api/cuenta/1001`);
+    console.log(`   GET  /api/cuenta/1001`);
+    console.log(`   POST /api/deposito  { cuenta, monto, sucursal }`);
+    console.log(`   POST /api/retiro    { cuenta, monto, sucursal }`);
   });
 });

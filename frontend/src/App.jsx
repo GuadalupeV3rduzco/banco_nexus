@@ -8,8 +8,8 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>🏦 Banco Nexus</h1>
-        <p className="subtitle">Sistema de gestión distribuida — Etapa 1</p>
+        <h1> Banco Nexus</h1>
+        <p className="subtitle">Sistema de gestión distribuida — Etapa 2</p>
       </header>
 
       <nav className="tabs">
@@ -17,7 +17,7 @@ export default function App() {
           className={vista === 'consulta' ? 'tab active' : 'tab'}
           onClick={() => setVista('consulta')}
         >
-          Consulta de cuenta
+          Operaciones bancarias
         </button>
         <button
           className={vista === 'dashboard' ? 'tab active' : 'tab'}
